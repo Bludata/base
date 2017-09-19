@@ -1,23 +1,29 @@
-sudo: required
-
-dist: trusty
-
 language: php
+
+sudo: required
 
 git:
   depth: 1
 
 matrix:
+  fast_finish: true
   include:
     - php: 5.6
-    - php: 7.0
+    - php: 7.0.21
+    - php: 7.0.21
+      env: setup=lowest
     - php: 7.1
+    - php: 7.1
+      env: setup=lowest
     - php: 7.2
-    - php: nightly
-  allow_failures:
     - php: 7.2
+      env: setup=lowest
     - php: nightly
-  fast_finish: true
+      env: setup=lowest
+
+cache:
+  directories:
+    - $HOME/.composer/cache
 
 before_install:
   - docker pull mongo
@@ -26,9 +32,11 @@ before_install:
   - pecl install mongodb
   - phpenv config-add ./travis/php.ini
 
+install:
+  - if [[ $setup = 'stable' ]]; then travis_retry composer update --prefer-dist --no-interaction --prefer-stable --no-suggest; fi
+  - if [[ $setup = 'lowest' ]]; then travis_retry composer update --prefer-dist --no-interaction --prefer-lowest --prefer-stable --no-suggest; fi
+
 before_script:
-  - travis_retry composer self-update
-  - travis_retry composer install --no-interaction --prefer-dist
   - travis_retry composer require alcaeus/mongo-php-adapter
   - travis_retry composer require doctrine/mongodb:dev-master
   - travis_retry composer require doctrine/mongodb-odm:dev-master
@@ -39,3 +47,4 @@ script:
 
 after_success:
   - if [ "$TRAVIS_PHP_VERSION" = "7.0" ]; then bash <(curl -s https://codecov.io/bash) -f coverage.xml -B $TRAVIS_BRANCH; fi
+
