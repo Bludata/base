@@ -5,12 +5,11 @@ namespace Bludata\Doctrine\ODM\MongoDB\Traits;
 use Bludata\Common\Helpers\FormatHelper;
 use Bludata\Doctrine\Common\Annotations\ToObject;
 use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ODM\MongoDB\Mapping\Annotations\Field;
-use Doctrine\ODM\MongoDB\Mapping\Annotations\ReferenceOne;
-use Doctrine\ODM\MongoDB\Mapping\Annotations\ReferenceMany;
-use Doctrine\ODM\MongoDB\Mapping\Annotations\EmbedOne;
 use Doctrine\ODM\MongoDB\Mapping\Annotations\EmbedMany;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\EmbedOne;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\Field;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\ReferenceMany;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\ReferenceOne;
 use ReflectionClass;
 use ReflectionProperty;
 
@@ -77,7 +76,6 @@ trait SetPropertiesEntityTrait
                      * Caso seja um campo de data, utilizamos o método FormatHelper::parseDate para converter o valor enviado pelo usuário para um objeto DateTime.
                      */
                     if ($column instanceof Field && ($column->type == 'date' || $column->type == 'datetime' || $column->type == 'time')) {
-
                         if ($column->type == 'time' && (is_string($valueKey) && strlen($valueKey) == 5)) {
                             $valueKey .= ':00';
                         }
@@ -91,7 +89,7 @@ trait SetPropertiesEntityTrait
                          * Doctrine\ODM\MongoDB\Mapping\Annotations\ReferenceOne
                          * Doctrine\ODM\MongoDB\Mapping\Annotations\ReferenceMany
                          * Doctrine\ODM\MongoDB\Mapping\Annotations\EmbedOne
-                         * Doctrine\ODM\MongoDB\Mapping\Annotations\EmbedMany
+                         * Doctrine\ODM\MongoDB\Mapping\Annotations\EmbedMany.
                          */
                         $ormMapping = array_filter($propertyAnnotations, function ($annotation) {
                             return $annotation instanceof ReferenceOne
@@ -114,7 +112,7 @@ trait SetPropertiesEntityTrait
                             $targetEntity = new $targetEntityName();
                             $repositoryTargetEntity = $targetEntity->getRepository();
 
-                            /**
+                            /*
                              * Se a propriedade estiver utilizando a anotação Doctrine\ORM\Mapping\ManyToOne e o usuário
                              * informou um número, então buscamos o devido objeto pelo seu id.
                              */
@@ -137,7 +135,7 @@ trait SetPropertiesEntityTrait
                                     throw new \BadMethodCallException('Para utilizar '.get_class($toObject).' em '.get_called_class().'::$'.$key.' você precisar declarar o método '.get_called_class().'::'.$methodAdd.'(), ou, informar o parâmetro '.get_class($toObject).'::customMethodAdd');
                                 }
 
-                                /**
+                                /*
                                  * Percorremos a lista original de elementos
                                  */
                                 foreach ($this->$methodGet() as $element) {
@@ -162,7 +160,7 @@ trait SetPropertiesEntityTrait
 
                                         unset($valueKey[$keyData]);
                                     } else {
-                                        /**
+                                        /*
                                          * Caso não seja encontrado, então significa que ele não será mais utilizado na lista, desse modo removemos da lista original.
                                          */
                                         $this->$methodGet()->removeElement($element);
@@ -194,4 +192,3 @@ trait SetPropertiesEntityTrait
         return $this;
     }
 }
-
