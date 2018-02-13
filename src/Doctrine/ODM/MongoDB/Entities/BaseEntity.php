@@ -5,6 +5,7 @@ namespace Bludata\Doctrine\ODM\MongoDB\Entities;
 use Bludata\Doctrine\Common\Interfaces\BaseEntityInterface;
 use Bludata\Doctrine\Common\Interfaces\EntityManagerInterface;
 use Bludata\Doctrine\Common\Interfaces\EntityTimestampInterface;
+use Bludata\Doctrine\ODM\MongoDB\Traits\SetPropertiesEntityTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ODM\MongoDB\Mapping\Annotations as ODM;
 use Doctrine\ODM\MongoDB\PersistentCollection;
@@ -15,6 +16,8 @@ use Doctrine\ODM\MongoDB\PersistentCollection;
  */
 abstract class BaseEntity implements BaseEntityInterface, EntityTimestampInterface
 {
+    use SetPropertiesEntityTrait;
+
     /**
      * @ODM\Id
      */
