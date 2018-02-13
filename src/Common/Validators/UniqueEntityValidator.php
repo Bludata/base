@@ -7,13 +7,18 @@ use Bludata\Doctrine\ORM\Helpers\FilterHelper;
 use Datetime;
 use Doctrine\Common\Annotations\AnnotationReader;
 use EntityManager;
-use Symfony\Component\Validator\Constraint;
-use Symfony\Component\Validator\ConstraintValidator;
 use ReflectionClass;
 use ReflectionProperty;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\ConstraintValidator;
 
 class UniqueEntityValidator extends ConstraintValidator
 {
+    /**
+     * @param Constraint $constraint
+     *
+     * @return string
+     */
     public function getMessage($entity, $constraint)
     {
         $entityName = $entity->getRepository()->getEntityName();
@@ -21,18 +26,18 @@ class UniqueEntityValidator extends ConstraintValidator
         $message = $constraint->message;
 
         $classAnnotations = $this->getAnnotations('Class', $entityName);
-        $labelAnnotation  = array_filter($classAnnotations, function($annotation){
+        $labelAnnotation = array_filter($classAnnotations, function ($annotation) {
             return $annotation instanceof Label;
         });
 
         $labelTemp = null;
-        if(is_array($labelAnnotation)) {
+        if (is_array($labelAnnotation)) {
             $labelTemp = array_values($labelAnnotation);
         }
 
         $labelAnnotation = $labelTemp ? $labelTemp[0] : null;
 
-        if($labelAnnotation) {
+        if ($labelAnnotation) {
             $message = str_replace('%entity%', ucfirst($labelAnnotation->value), $message);
         }
 
@@ -43,18 +48,18 @@ class UniqueEntityValidator extends ConstraintValidator
         foreach ($fields as $field) {
             $propertyAnnotations = $this->getAnnotations('Property', $entityName, $field);
 
-            $labelAnnotation = array_filter($propertyAnnotations, function($annotation){
+            $labelAnnotation = array_filter($propertyAnnotations, function ($annotation) {
                 return $annotation instanceof Label;
             });
 
             $labelTemp = null;
-            if(is_array($labelAnnotation)) {
+            if (is_array($labelAnnotation)) {
                 $labelTemp = array_values($labelAnnotation);
             }
 
             $labelAnnotation = $labelTemp ? $labelTemp[0] : null;
 
-            if($labelAnnotation) {
+            if ($labelAnnotation) {
                 $message = str_replace('%'.$field.'%', ucfirst($labelAnnotation->value), $message);
             }
         }
@@ -63,21 +68,22 @@ class UniqueEntityValidator extends ConstraintValidator
     }
 
     /**
-     * Busca as annotations de uma classe ou das propriedades da classe
-     * @param  string $type  [Class or Property]
-     * @param  [type] $class [Name class]
-     * @param  [type] $field [Field to get annotations]
+     * Busca as annotations de uma classe ou das propriedades da classe.
+     *
+     * @param string $type  [Class or Property]
+     * @param [type] $field [Field to get annotations]
+     *
      * @return [array]
      */
     public function getAnnotations($type = 'Class', $entity, $field = null):array
     {
         $annotationReader = new AnnotationReader();
 
-        if($type == 'Property' && is_null($field)) {
+        if ($type == 'Property' && is_null($field)) {
             abort(501, 'Necessário informar o campo');
         }
 
-        $reflection  = $type == 'Class' ? new ReflectionClass($entity) : new ReflectionProperty($entity, $field);
+        $reflection = $type == 'Class' ? new ReflectionClass($entity) : new ReflectionProperty($entity, $field);
         $annotations = $type == 'Class' ? $annotationReader->getClassAnnotations($reflection) : $annotationReader->getPropertyAnnotations($reflection);
 
         return $annotations;
@@ -103,7 +109,7 @@ class UniqueEntityValidator extends ConstraintValidator
         $query = $entity->getRepository()->findAll($constraint->withDefaultFilters);
 
         foreach ($fields as $field) {
-            $methodGet = 'get' . ucfirst($field);
+            $methodGet = 'get'.ucfirst($field);
             if (empty($entity->$methodGet())) {
                 $validate = false;
                 break;
@@ -131,8 +137,8 @@ class UniqueEntityValidator extends ConstraintValidator
 
             if ($results[0]->getId() != $entity->getId()) {
                 $this->context
-                     ->buildViolation($message)
-                     ->addViolation();
+                        ->buildViolation($message)
+                        ->addViolation();
             }
         }
 

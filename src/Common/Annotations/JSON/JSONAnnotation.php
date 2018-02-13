@@ -1,8 +1,8 @@
 <?php
 
-namespace Bludata\Common\Annotations\XML;
+namespace Bludata\Common\Annotations\JSON;
 
-abstract class XMLAnnotation
+abstract class JSONAnnotation
 {
     /**
      * @Required
@@ -25,18 +25,7 @@ abstract class XMLAnnotation
     /**
      * @return string to string passing value
      */
-    public function toString($value = null)
-    {
-        $toString = '<'.$this->getName().'>';
-
-        if (is_scalar($value)) {
-            $toString .= $value;
-        }
-
-        $toString .= '</'.$this->getName().'>';
-
-        return $toString;
-    }
+    abstract public function toString($value = null);
 
     /**
      * @return string to string

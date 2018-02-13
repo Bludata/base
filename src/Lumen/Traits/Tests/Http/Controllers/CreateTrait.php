@@ -17,6 +17,6 @@ trait CreateTrait
 
         $data = json_decode($response['data'], true);
 
-        $this->assertGreaterThan(0, $data['id']);
+        $this->assertNotNull($data['id']);
     }
 }

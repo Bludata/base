@@ -8,50 +8,39 @@ use Elasticsearch\ClientBuilder;
 class ElasticsearchAudit implements AuditInterface
 {
     protected $elasticsearch;
-    protected $mappingConfig;
 
-    public function __construct(Array $mapping)
+    public function __construct()
     {
         $this->refreshClient();
-        $this->mappingConfig = $mapping;
-    }
-
-    /**
-     * @return array
-     */
-    public function getMappingConfig($index)
-    {
-        return $this->mappingConfig['index'][$index];
     }
 
     public function refreshClient()
     {
         $hosts = [
             [
-                'host' => env('AUDIT_HOST', 'localhost'),
-                'port' => env('AUDIT_PORT', '9200'),
-                'scheme' => env('AUDIT_SCHEME', 'http')
+                'host'   => env('AUDIT_HOST', 'localhost'),
+                'port'   => env('AUDIT_PORT', '9200'),
+                'scheme' => env('AUDIT_SCHEME', 'http'),
             ],
         ];
         $elasticsearch = ClientBuilder::create();
         $elasticsearch->setHosts($hosts);
+        $elasticsearch->allowBadJSONSerialization();
         $this->elasticsearch = $elasticsearch->build();
     }
 
     /**
-     * Gerar em uma migration com os templates criados
+     * Gerar em uma migration com os templates criados.
      */
-    public function createLogIndex($index = null)
+    public function createIndex($index = null)
     {
-        if (!$this->elasticsearch->indices()->exists(['index' => $index])) {
-
-            $params = $this->getMappingConfig($index);
-            return $this->elasticsearch->indices()->create($params);
+        if (!$this->elasticsearch->indices()->exists(['index' => $index['index']])) {
+            return $this->elasticsearch->indices()->create($index);
         }
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function put($index, $value, $template = 'log')
     {
@@ -61,36 +50,37 @@ class ElasticsearchAudit implements AuditInterface
 
         $params = [
             'index' => env('AUDIT_INDEX', $index ? $index : ''),
-            'body' => $value,
-            'type' => $template,
+            'body'  => $value,
+            'type'  => $template,
         ];
 
         $response = $this->elasticsearch->index($params);
+
         return $response;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function get($key, $id = null, $type = 'log')
     {
         $params = [
-            'index' => $this->prefix . $key,
-            'id' => $id,
-            'type' => $type,
+            'index' => $this->prefix.$key,
+            'id'    => $id,
+            'type'  => $type,
         ];
 
         $result = $this->elasticsearch->get($params);
 
         if (!$result['found']) {
-            abort(404, "Indíce não encontrado");
+            abort(404, 'Indíce não encontrado');
         }
 
-        return $result["_source"];
+        return $result['_source'];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function delete($index)
     {
@@ -104,6 +94,7 @@ class ElasticsearchAudit implements AuditInterface
         if ($index) {
             $indexParams['index'] = $index;
         }
+
         return $this->elasticsearch->search($indexParams);
     }
 
@@ -114,6 +105,7 @@ class ElasticsearchAudit implements AuditInterface
         if ($index) {
             $indexParams['index'] = $index;
         }
+
         return $this->elasticsearch->search($indexParams);
     }
 
@@ -124,6 +116,7 @@ class ElasticsearchAudit implements AuditInterface
         if ($index) {
             $indexParams['index'] = $index;
         }
+
         return $this->elasticsearch->search($indexParams);
     }
 
@@ -134,6 +127,7 @@ class ElasticsearchAudit implements AuditInterface
         if ($index) {
             $indexParams['index'] = $index;
         }
+
         return $this->elasticsearch->search($indexParams);
     }
 
@@ -144,6 +138,7 @@ class ElasticsearchAudit implements AuditInterface
         if ($index) {
             $indexParams['index'] = $index;
         }
+
         return $this->elasticsearch->search($indexParams);
     }
 }

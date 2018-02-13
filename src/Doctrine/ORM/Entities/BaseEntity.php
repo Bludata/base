@@ -4,7 +4,7 @@ namespace Bludata\Doctrine\ORM\Entities;
 
 use Bludata\Doctrine\Common\Interfaces\BaseEntityInterface;
 use Bludata\Doctrine\Common\Interfaces\EntityTimestampInterface;
-use Bludata\Doctrine\Common\Traits\SetPropertiesEntityTrait;
+use Bludata\Doctrine\ORM\Traits\SetPropertiesEntityTrait;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
@@ -23,8 +23,8 @@ abstract class BaseEntity implements BaseEntityInterface, EntityTimestampInterfa
 
     /**
      * @ORM\Id
-     * @ORM\Column(type="integer", name="id")
-     * @ORM\GeneratedValue
+     * @ORM\Column(type="guid", name="id")
+     * @ORM\GeneratedValue(strategy="UUID")
      */
     protected $id;
 
@@ -228,7 +228,8 @@ abstract class BaseEntity implements BaseEntityInterface, EntityTimestampInterfa
         $array = [];
 
         foreach ($this->getFillable() as $key) {
-            $metaDataKey = $classMetadata->hasField($key) ? $classMetadata->getFieldMapping($key) : null;
+            $metaDataKey    = $classMetadata->hasField($key) ? $classMetadata->getFieldMapping($key) : null;
+            $optionsToArray = 'toArray'.ucfirst($key);
 
             if ($this->checkOnyExceptInArray($key, $options)) {
                 if (is_object($this->$key)) {
@@ -255,11 +256,15 @@ abstract class BaseEntity implements BaseEntityInterface, EntityTimestampInterfa
                     } elseif ($this->$key instanceof ArrayCollection || $this->$key instanceof PersistentCollection) {
                         $ids = [];
                         foreach ($this->$key->getValues() as $item) {
-                            $ids[] = $item->getId();
+                            $ids[] = isset($options[$optionsToArray]) ? $item->toArray($options[$optionsToArray]) : $item->getId();
                         }
                         $array[$key] = $ids;
                     } else {
-                        $array[$key] = $this->$key->getId();
+                        if (method_exists($this->$key, 'getId')) {
+                            $array[$key] = isset($options[$optionsToArray]) ? $this->$key->toArray($options[$optionsToArray]) : $this->$key->getId();
+                        } else {
+                            $array[$key] = $this->$key;
+                        }
                     }
                 } else {
                     if ($metaDataKey['type'] == 'decimal') {

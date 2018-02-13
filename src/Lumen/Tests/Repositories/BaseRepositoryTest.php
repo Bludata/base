@@ -2,7 +2,6 @@
 
 namespace Bludata\Lumen\Tests\Repositories;
 
-use Bludata\Doctrine\ORM\Helpers\FilterHelper;
 use Bludata\Lumen\Tests\BaseTest;
 
 abstract class BaseRepositoryTest extends BaseTest
@@ -16,8 +15,8 @@ abstract class BaseRepositoryTest extends BaseTest
         $entity = $this->getMockObject($except);
 
         $this->getRepository()
-             ->save($entity)
-             ->flush($entity);
+                ->save($entity)
+                ->flush($entity);
 
         return $entity;
     }
@@ -88,42 +87,8 @@ abstract class BaseRepositoryTest extends BaseTest
         $entity = $this->getFlushedMockObject();
 
         $repository->remove($entity)
-                   ->flush($entity);
+                    ->flush($entity);
 
         $repository->find($entity->getId());
-    }
-
-    public function testFindAllRemoved()
-    {
-        $entity = $this->getFlushedMockObject()
-                       ->remove()
-                       ->flush();
-
-        $findAllRemoved = $this->getRepository()->findAllRemoved()->getResult();
-
-        $this->assertGreaterThan(0, count($findAllRemoved));
-        $this->assertInstanceOf($this->getRepository()->getEntityName(), $findAllRemoved[0]);
-
-        foreach ($findAllRemoved as $entity)
-        {
-            $this->assertNotNull($entity->getDeletedAt());
-        }
-
-        FilterHelper::enableSoftDeleteableFilter();
-    }
-
-    public function testFindRemoved()
-    {
-        $entity = $this->getFlushedMockObject()
-                       ->remove()
-                       ->flush();
-
-        $repository = $this->getRepository();
-
-        $findRemoved = $repository->findRemoved($entity->getId());
-
-        $this->assertInstanceOf($repository->getEntityName(), $findRemoved);
-        $this->assertEquals($entity->getId(), $findRemoved->getId());
-        $this->assertNotNull($entity->getDeletedAt());
     }
 }

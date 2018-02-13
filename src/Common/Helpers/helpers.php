@@ -1,10 +1,15 @@
 <?php
 
 /**
- * Checks the existence of the class in Core or Base
+ * Checks the existence of the class in Core or Base.
+ *
  * @return name of class
  */
 if (!function_exists('bdClassExists')) {
+
+    /**
+     * @param string $folder
+     */
     function bdClassExists($folder, $className, $module = null, $version = 'v1', $abort = true)
     {
         $entityClass = app()->getBaseNamespace().app()->getMainModule($module).'\\'.$version.'\\'.$folder.'\\'.$className;
@@ -21,11 +26,16 @@ if (!function_exists('bdClassExists')) {
     }
 }
 
-/**
+/*
  * Checks the existence of the class interface in Core or Base
  * @return name of class interface
  */
 if (!function_exists('bdInterfaceExists')) {
+
+    /**
+     * @param string $folder
+     * @param string $className
+     */
     function bdInterfaceExists($folder, $className, $module = null, $version = 'v1', $abort = true)
     {
         $entityClass = app()->getBaseNamespace().app()->getMainModule($module).'\\'.$version.'\\'.$folder.'\\'.$className;
@@ -42,7 +52,7 @@ if (!function_exists('bdInterfaceExists')) {
     }
 }
 
-/**
+/*
  * @return the name of the repository interface
  */
 if (!function_exists('bdRepositoryInterfaceClass')) {
@@ -52,7 +62,7 @@ if (!function_exists('bdRepositoryInterfaceClass')) {
     }
 }
 
-/**
+/*
  * @return the name of the class
  */
 if (!function_exists('bdRepositoryClass')) {
@@ -62,7 +72,7 @@ if (!function_exists('bdRepositoryClass')) {
     }
 }
 
-/**
+/*
  * @return an instance of the class repository
  */
 if (!function_exists('bdRepository')) {
@@ -72,7 +82,7 @@ if (!function_exists('bdRepository')) {
     }
 }
 
-/**
+/*
  * @return the name of the service interface
  */
 if (!function_exists('bdServiceInterfaceClass')) {
@@ -82,7 +92,7 @@ if (!function_exists('bdServiceInterfaceClass')) {
     }
 }
 
-/**
+/*
  * @return the name of the service
  */
 if (!function_exists('bdServiceClass')) {
@@ -92,7 +102,7 @@ if (!function_exists('bdServiceClass')) {
     }
 }
 
-/**
+/*
  * @return an instance of the service
  */
 if (!function_exists('bdService')) {
@@ -102,7 +112,7 @@ if (!function_exists('bdService')) {
     }
 }
 
-/**
+/*
  * @return the name of the entity
  */
 if (!function_exists('bdEntityClass')) {
@@ -112,7 +122,7 @@ if (!function_exists('bdEntityClass')) {
     }
 }
 
-/**
+/*
  * @return an instance of the entity
  */
 if (!function_exists('bdEntity')) {
@@ -122,7 +132,7 @@ if (!function_exists('bdEntity')) {
     }
 }
 
-/**
+/*
  * @return the name of the contract
  */
 if (!function_exists('bdContractClass')) {
@@ -132,7 +142,7 @@ if (!function_exists('bdContractClass')) {
     }
 }
 
-/**
+/*
  * @return an instance of the contract
  */
 if (!function_exists('bdContract')) {
@@ -141,17 +151,21 @@ if (!function_exists('bdContract')) {
         return app(bdContractClass($className, $module, $version, $abort));
     }
 }
-/**
+/*
  * Verifica a existencia da interface
  */
 if (!function_exists('bdInterfaceClass')) {
+
+    /**
+     * @param string $className
+     */
     function bdInterfaceClass($className, $module = null, $version = 'v1', $abort = true)
     {
         return bdInterfaceExists('Interfaces', $className.'Interface', $module, $version, $abort);
     }
 }
 
-/**
+/*
  * @return an instance of the EntityManager
  */
 if (!function_exists('em')) {
@@ -161,7 +175,7 @@ if (!function_exists('em')) {
     }
 }
 
-/**
+/*
  * Dump and die.
  */
 if (!function_exists('dd')) {
@@ -215,11 +229,11 @@ if (!function_exists('dr')) {
     }
 }
 
-/**
+/*
  * Retrieve all annotations of a giving object
  */
 if (!function_exists('get_class_annotations')) {
-    function get_class_annotations($element, $annotation=null)
+    function get_class_annotations($element, $annotation = null)
     {
         $class = $element;
         if (is_object($element)) {
@@ -228,15 +242,16 @@ if (!function_exists('get_class_annotations')) {
 
         $reflectClass = new \ReflectionClass($class);
         $reader = new \Doctrine\Common\Annotations\AnnotationReader();
+
         return $reader->getClassAnnotations($reflectClass, $annotation);
     }
 }
 
-/**
+/*
  * Retrieve annotations of a especific property of a giving object
  */
 if (!function_exists('get_property_annotations')) {
-    function get_property_annotations($element, $property=null, $annotation=null)
+    function get_property_annotations($element, $property = null, $annotation = null)
     {
         $class = $element;
         if (is_object($element) && !($element instanceof \ReflectionClass)) {
@@ -255,10 +270,42 @@ if (!function_exists('get_property_annotations')) {
         $reflectClass = new \ReflectionClass($class);
         $reflectProperties = $reflectClass->getProperties();
         $annotations = [];
-        foreach($reflectProperties as $property) {
+        foreach ($reflectProperties as $property) {
             $annotations[$property->getName()] = get_property_annotations($reflectClass, $property, $annotation);
         }
 
         return $annotations;
+    }
+}
+
+/*
+ * Retrieve the relative url from a route
+ */
+if (!function_exists('bdRoute')) {
+    function bdRoute($name, $parameters)
+    {
+        if (!isset(app()->namedRoutes[$name])) {
+            throw new \InvalidArgumentException("Route [{$name}] not defined.");
+        }
+
+        $uri = app()->namedRoutes[$name];
+
+        $parameters = is_array($parameters) ? $parameters : [$parameters];
+
+        foreach ($parameters as $key => $parameter) {
+            if ($parameter instanceof UrlRoutable) {
+                $parameters[$key] = $parameter->getRouteKey();
+            }
+        }
+
+        $uri = preg_replace_callback('/\{(.*?)(:.*?)?(\{[0-9,]+\})?\}/', function ($m) use (&$parameters) {
+            return isset($parameters[$m[1]]) ? array_pull($parameters, $m[1]) : $m[0];
+        }, $uri);
+
+        if (!empty($parameters)) {
+            $uri .= '?'.http_build_query($parameters);
+        }
+
+        return $uri;
     }
 }

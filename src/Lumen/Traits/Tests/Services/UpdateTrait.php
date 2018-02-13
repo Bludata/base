@@ -4,11 +4,10 @@ namespace Bludata\Lumen\Traits\Tests\Services;
 
 trait UpdateTrait
 {
-    /**
-     * @depends testStore
-     */
-    public function testUpdate($entity)
+    public function testUpdate()
     {
+        $entity = $this->getRepositoryTest()->getFlushedMockObject();
+
         $flushedMockArray = $entity->toArray();
         $mockArray = $this->getRepositoryTest()->getMockArray();
 
@@ -21,8 +20,8 @@ trait UpdateTrait
         }
 
         $entity = $this->getService()
-                       ->update($flushedMockArray['id'], $flushedMockArray)
-                       ->flush();
+                        ->update($flushedMockArray['id'], $flushedMockArray)
+                        ->flush();
 
         $repository = $this->getService()->getMainRepository();
 

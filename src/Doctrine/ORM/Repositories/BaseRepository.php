@@ -2,10 +2,13 @@
 
 namespace Bludata\Doctrine\ORM\Repositories;
 
+use Bludata\Common\Annotations\Label;
 use Bludata\Doctrine\Common\Interfaces\BaseEntityInterface;
 use Bludata\Doctrine\Common\Interfaces\BaseRepositoryInterface;
 use Bludata\Doctrine\ORM\Helpers\FilterHelper;
+use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\EntityRepository;
+use ReflectionClass;
 use Symfony\Component\Validator\ValidatorBuilder;
 
 abstract class BaseRepository extends EntityRepository implements BaseRepositoryInterface
@@ -117,12 +120,8 @@ abstract class BaseRepository extends EntityRepository implements BaseRepository
             return $input;
         }
 
-        if (is_string($input)) {
+        if (is_string($input) && is_object(json_decode($input)) && is_array(json_decode($input, true))) {
             $input = json_decode($input, true);
-        }
-
-        if (is_numeric($input)) {
-            return $this->find($input);
         }
 
         if (is_array($input)) {
@@ -137,7 +136,11 @@ abstract class BaseRepository extends EntityRepository implements BaseRepository
             return $object;
         }
 
-        throw new \InvalidArgumentException('O parâmetro $input pode ser um null | string | int | array');
+        if (is_numeric($input) || is_string($input)) {
+            return $this->find($input);
+        }
+
+        throw new \InvalidArgumentException('O parâmetro $input pode ser um null | string | array | numeric');
     }
 
     /**
@@ -241,7 +244,7 @@ abstract class BaseRepository extends EntityRepository implements BaseRepository
                     $qb = $this->em()->createQueryBuilder();
                     $qb->select('COUNT(t)')
                         ->from($metadata->getName(), 't')
-                        ->andWhere('t.' . $metadata->getAssociationMapping($field)['fieldName'] . ' = ?1')
+                        ->andWhere('t.'.$metadata->getAssociationMapping($field)['fieldName'].' = ?1')
                         ->setParameter(1, $entity->getId());
 
                     //ignore deleted
@@ -253,21 +256,34 @@ abstract class BaseRepository extends EntityRepository implements BaseRepository
                             $parentMetaData = $this->em()->getClassMetadata($parent);
                             if ($parentMetaData->hasField('deletedAt')) {
                                 $id = $parentMetaData->getIdentifierFieldNames()[0];
-                                $qb->join($parent, 't' . $count, 'WITH', 't' . $count . '.' . $id . ' = t.' . $id)
-                                    ->andWhere('t' . $count . '.deletedAt IS NULL');
+                                $qb->join($parent, 't'.$count, 'WITH', 't'.$count.'.'.$id.' = t.'.$id)
+                                    ->andWhere('t'.$count.'.deletedAt IS NULL');
                                 $count++;
                             }
                         }
                     }
                     if ($qb->getQuery()->getSingleScalarResult() > 0) {
-                        //@TODO pegar o label da classe nas annotations
-                        $entities[] = $metadata->getTableName();
+                        $annotationReader = new AnnotationReader();
+                        $reflection = new ReflectionClass(app($metadata->getName()));
+                        $classAnnotations = $annotationReader->getClassAnnotations($reflection);
+                        $labelAnnotation = array_filter($classAnnotations, function ($annotation) {
+                            return $annotation instanceof Label;
+                        });
+
+                        $labelTemp = null;
+
+                        if (is_array($labelAnnotation)) {
+                            $labelTemp = array_values($labelAnnotation);
+                        }
+
+                        $labelAnnotation = $labelTemp ? $labelTemp[0] : null;
+                        $entities[] = $labelAnnotation ? $labelAnnotation->value : $metadata->getTableName();
                     }
                 }
             }
         }
         if (count($entities)) {
-            abort(404, 'Esse registro está sendo utilizado por: ' . implode(', ', $entities) . '.');
+            abort(404, 'Esse registro está sendo utilizado por: '.implode(', ', $entities).'.');
         }
     }
 }

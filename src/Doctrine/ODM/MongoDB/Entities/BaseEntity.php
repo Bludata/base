@@ -212,6 +212,32 @@ abstract class BaseEntity implements BaseEntityInterface, EntityTimestampInterfa
         return $this->getOnlyStore();
     }
 
+    public function setPropertiesEntity(array $data)
+    {
+        foreach ($data as $key => $value) {
+            $set = true;
+
+            if (
+                ((!isset($data['id']) || !is_numeric($data['id'])) && !in_array($key, $this->getOnlyStore()))
+                ||
+                (isset($data['id']) && is_numeric($data['id']) && !in_array($key, $this->getOnlyUpdate()))
+            ) {
+                $set = false;
+            }
+
+            $method = 'set'.ucfirst($key);
+
+            if (method_exists($this, $method) && $set) {
+                $this->$method($value);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param string $key
+     */
     final protected function checkOnyExceptInArray($key, array $options = null)
     {
         if (

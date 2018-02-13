@@ -55,7 +55,7 @@ class QueryWorker
      */
     protected $field = [];
     /**
-     * @var integer
+     * @var int
      */
     protected $position = 0;
     /**
@@ -168,11 +168,12 @@ class QueryWorker
     }
 
     /**
-     * @return Doctrine\ORM\QueryWorker
+     * @return QueryWorker
      */
     public function setBuilder($builder)
     {
         $this->queryBuilder = $builder;
+
         return $this;
     }
 
@@ -191,7 +192,7 @@ class QueryWorker
      *
      * @param array $filters
      *
-     * @return Bludata\Doctrine\ORM\Repositories\QueryWorker
+     * @return QueryWorker
      */
     public function withFilters(array $filters = null)
     {
@@ -271,13 +272,12 @@ class QueryWorker
         if (strpos($field, '.') > 0) {
             //monta os joins
             $this->fieldValue = [
-                'value' => $value,
+                'value'     => $value,
                 'operation' => $operation,
             ];
             $newAliasField = $this->associationQueryFields($field);
             $alias = $newAliasField['alias'];
             $field = $newAliasField['field'];
-
         }
         $this->queryBuilder->andWhere($this->makeExpression($field, $operation, $value, $alias));
 
@@ -378,7 +378,6 @@ class QueryWorker
      * Add a "or having" filter.
      *
      * @param string $field
-     * @param string $order
      */
     public function orHaving($field, $operation, $value = null)
     {
@@ -442,6 +441,7 @@ class QueryWorker
             }
         }
         $this->queryBuilder->select(implode(',', $this->queryFields));
+
         return $this;
     }
 
@@ -450,7 +450,6 @@ class QueryWorker
      *
      * @param associationField.fkField
      * @param $field
-     *
      */
     public function associationQueryFields($campo)
     {
@@ -470,11 +469,9 @@ class QueryWorker
 
             $tempMeta = '';
             foreach ($arr as $key => $value) {
-
                 $this->position = $key;
 
                 if ($this->position < count($arr) - 1) {
-
                     $dados = $this->getMetaAndAliases();
 
                     $alias = $dados['alias'];
@@ -497,7 +494,6 @@ class QueryWorker
                             $alias,
                             $parentAlias
                         );
-
                     } elseif ($meta->isCollectionValuedAssociation($value)) {
                         $association = $meta->getAssociationMapping($value);
                         if (empty($association['mappedBy']) && empty($association['joinTable'])) {
@@ -551,8 +547,9 @@ class QueryWorker
     }
 
     /**
-     * Get the classMetadata and alias from the current position in the field
-     * @return array
+     * Get the classMetadata and alias from the current position in the field.
+     *
+     * @return string
      */
     private function getMetaAndAliases()
     {
@@ -563,7 +560,6 @@ class QueryWorker
         $alias = '';
 
         for ($i = 0; $i <= $this->position; $i++) {
-
             $metaAnterior = $meta;
 
             if ($meta->hasAssociation($arr[$i])) {
@@ -596,14 +592,15 @@ class QueryWorker
         }
 
         return [
-            'meta' => $meta,
-            'parentMeta' => $metaAnterior,
-            'alias' => $alias,
+            'meta'        => $meta,
+            'parentMeta'  => $metaAnterior,
+            'alias'       => $alias,
             'parentAlias' => $parent,
         ];
     }
+
     /**
-     * Create a join
+     * Create a join.
      *
      * @param string $table
      * @param string $field
@@ -614,26 +611,26 @@ class QueryWorker
     private function setJoin($table, $field, $parentField, $alias, $parentAlias)
     {
         if (!in_array($alias, $this->tables)) {
-            $condition = $this->getFullFieldName($field, $alias) . ' = ' . $this->getFullFieldName($parentField, $parentAlias);
+            $condition = $this->getFullFieldName($field, $alias).' = '.$this->getFullFieldName($parentField, $parentAlias);
             $this->queryBuilder->join($table, $alias, 'WITH', $condition);
             $this->tables[] = $alias;
         }
     }
 
     /**
-     * Create a left join with optional where
+     * Create a left join with optional where.
      *
      * @param string $table
      * @param string $field
      * @param string $parentField
      * @param string $alias
      * @param string $parentAlias
-     * @param boolean $withWhere
+     * @param bool   $withWhere
      */
     private function setLeftJoin($table, $field, $parentField, $alias, $parentAlias, $withWhere = false)
     {
         if (!in_array($alias, $this->tables)) {
-            $condition = $this->getFullFieldName($field, $alias) . ' = ' . $this->getFullFieldName($parentField, $parentAlias);
+            $condition = $this->getFullFieldName($field, $alias).' = '.$this->getFullFieldName($parentField, $parentAlias);
             $this->queryBuilder->leftJoin($table, $alias, 'WITH', $condition);
             if ($withWhere) {
                 $this->queryBuilder->andWhere($condition);
@@ -641,12 +638,15 @@ class QueryWorker
             $this->tables[] = $alias;
         }
     }
+
     /**
-     * Create a condition with the value
+     * Create a condition with the value.
      *
-     * @param array $association
+     * @param array  $association
      * @param string $alias
-     * @param array $arr
+     * @param array  $arr
+     *
+     * @return mix|null
      */
     private function setManyToManyValuedCondition($association, $alias, $arr)
     {
@@ -654,14 +654,16 @@ class QueryWorker
             return null;
         }
         $targetField = $this->position == count($arr) - 1 ? $association['joinTable']['joinColumns'][0]['referencedColumnName'] : end($arr);
+
         return $this->makeExpression($targetField, $this->fieldValue['operation'], $this->fieldValue['value'], $alias);
     }
+
     /**
-     * Create a manyToMany join
+     * Create a manyToMany join.
      *
      * @param string $table
      * @param string $alias
-     * @param mix $condition
+     * @param mix    $condition
      */
     private function setManyToManyJoin($table, $alias, $condition = null)
     {
@@ -674,8 +676,9 @@ class QueryWorker
             $this->tables[] = $alias;
         }
     }
+
     /**
-     * Add the field in the select field list
+     * Add the field in the select field list.
      *
      * @param $meta
      * @param $value
@@ -685,24 +688,24 @@ class QueryWorker
     {
         $campo = $this->getFullFieldName($value, $alias);
 
-        if ($meta->isSingleValuedAssociation($value)) {
+        if ($meta->isSingleValuedAssociation($value) && $value != $alias) {
             $targetField = $meta->getAssociationMapping($value)['joinColumns'][0]['referencedColumnName'];
-            $alias = $alias == self::DEFAULT_TABLE_ALIAS ? substr($campo, strpos($campo, '.') + 1) : $alias . '_' . $targetField;
-            $campo = "IDENTITY(" . $campo . ") " . $alias;
+            $alias = $alias == self::DEFAULT_TABLE_ALIAS ? substr($campo, strpos($campo, '.') + 1) : $alias.'_'.$targetField;
+            $campo = 'IDENTITY('.$campo.') '.$alias;
         } elseif ($this->position > 0) {
-            $campo = '(' . $campo . ') AS ' . $alias . '_' . $value;
+            $campo = '('.$campo.') AS '.$alias.'_'.$value;
         }
         // acrescenta o campo ao select
         $this->queryFields[] = $campo;
     }
 
     /**
-     * Get the fields to create a join with a subClass
+     * Get the fields to create a join with a subClass.
      *
      * @param $meta
      * @param $value
      *
-     * @return array
+     * @return string
      */
     private function getSubClassFields($meta, $value)
     {
@@ -712,18 +715,17 @@ class QueryWorker
             $tempMeta = $this->em->getClassMetadata($subClass);
             if (end($temp) == $value) {
                 return [
-                    'table' => $subClass,
+                    'table'       => $subClass,
                     'parentField' => $meta->getIdentifierColumnNames()[0],
                     'targetField' => $tempMeta->getIdentifierColumnNames()[0],
-                    'meta' => $tempMeta,
+                    'meta'        => $tempMeta,
                 ];
             }
         }
-        return;
     }
 
     /**
-     * Get the target field
+     * Get the target field.
      *
      * @param $meta
      * @param $parentMeta
@@ -750,15 +752,15 @@ class QueryWorker
         if ($field) {
             return $field;
         }
-        return $meta->getIdentifierColumnNames()[0];
 
+        return $meta->getIdentifierColumnNames()[0];
     }
 
     /**
-     * Search the field in the associations list
+     * Search the field in the associations list.
      *
      * @param $associationsByTargetClass
-     * @param $parentTable
+     * @param string $parentTable
      * @param $value
      *
      * @return string
@@ -770,7 +772,6 @@ class QueryWorker
                 return $association['fieldName'];
             }
         }
-        return;
     }
 
     /**
@@ -808,6 +809,8 @@ class QueryWorker
      */
     protected function makeExpression($field, $operation, $value = null, $alias = self::DEFAULT_TABLE_ALIAS)
     {
+        $originalValue = $value;
+
         if (!is_array($value)) {
             $value = $this->queryBuilder->expr()->literal($value);
         }
@@ -852,26 +855,27 @@ class QueryWorker
             case 'notin':
                 $expression = $this->queryBuilder->expr()->notIn($field, $value);
                 break;
-            case 'contains':
-                /*
-                 * @todo implementar o metodo contains
-                 */
-                // $expression = $this->queryBuilder->expr()->contains($field, $value);
+            case 'memberof':
+                $expression = ':memberId MEMBER OF '.$field;
+                $this->queryBuilder->setParameter('memberId', $originalValue);
                 break;
             case 'like':
-                $expression = $this->queryBuilder->expr()->like('LOWER(' . $field . ')', strtolower($value));
+                $expression = $this->queryBuilder->expr()->like('LOWER('.$field.')', strtolower($value));
                 break;
             case 'notlike':
                 $expression = $this->queryBuilder->expr()->notLike($field, $value);
                 break;
             case 'isinstanceof':
-                $expression = $alias . ' INSTANCE OF ' . $value;
+                $expression = $alias.' INSTANCE OF '.$value;
+                break;
+            case 'notinstanceof':
+                $expression = $alias.' NOT INSTANCE OF '.$value;
                 break;
             case 'between':
                 $expression = $this->queryBuilder->expr()->between($field, $this->queryBuilder->expr()->literal($value[0]), $this->queryBuilder->expr()->literal($value[1]));
                 break;
             case 'dateparteq':
-                $expression = $this->queryBuilder->expr()->eq("DATEPART('" . $value['format'] . "', " . $field . ')', $value['value']);
+                $expression = $this->queryBuilder->expr()->eq("DATEPART('".$value['format']."', ".$field.')', $value['value']);
         }
 
         return $expression;
@@ -882,6 +886,6 @@ class QueryWorker
      */
     protected function tableAlias()
     {
-        return self::DEFAULT_TABLE_ALIAS . count($this->queryBuilder->getAllAliases());
+        return self::DEFAULT_TABLE_ALIAS.count($this->queryBuilder->getAllAliases());
     }
 }
