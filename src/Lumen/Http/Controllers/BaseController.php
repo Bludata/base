@@ -52,12 +52,12 @@ abstract class BaseController extends Controller
         if ($request->has('defaultFilters') && $filters = json_decode(base64_decode($request->get('defaultFilters')), true)) {
             foreach ($filters as $filter => $enable) {
                 if ($enable) {
-                    if (!EntityManager::getFilters()->isEnabled('cfcId')) {
-                        EntityManager::getFilters()->enable('cfcId');
+                    if (!EntityManager::getFilters()->isEnabled($filter)) {
+                        EntityManager::getFilters()->enable($filter);
                     }
                 } else {
-                    if (EntityManager::getFilters()->isEnabled('cfcId')) {
-                        EntityManager::getFilters()->disable('cfcId');
+                    if (EntityManager::getFilters()->isEnabled($filter)) {
+                        EntityManager::getFilters()->disable($filter);
                     }
                 }
             }
